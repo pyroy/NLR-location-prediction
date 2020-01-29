@@ -1,0 +1,2 @@
+osmosis.bat --read-xml D:\Programming\Projects\NLR-location-prediction\maps\heilbronn.osm --write-srtm locDir=D:\Programming\Projects\NLR-location-prediction\osmosis\osmosis-latest\bin\srtmfiles\ --write-xml test_with_srtm.osm
+pause

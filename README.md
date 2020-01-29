@@ -1,8 +1,7 @@
 # NLR-location-prediction
 NLR Location Prediction
 
-push A.U.B. naar indev en niet naar master
+hey hawwo~~ uwu wewcom to NLR location pwedicshon hihi kya
+hallo
 
-Project gebruikt:
-- OSMnx
-- TKinter
+SUCC
