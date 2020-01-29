@@ -3,12 +3,6 @@ import pickle, os, math
 PATH = os.path.dirname(os.path.abspath(__file__)) + "\\"
 PATH = PATH[:-4]
 
-# NODE_DICT gives a Node object and uses node ids as keys
-# STREET_DICT gives a dictionary with the street ids as keys, and a list of all node ids in the street as the value
-# INTSEC_DICT gives a dictionary with the street ids as keys, and a list of all node ids connected to other streets as the value
-
-# INTSEC is used for drawing and algorithms, STREET_DICT for determining goals using buildings & sightings
-
 class Node:
     def __init__(self, ref, lat, lon, data):
         self.ref = ref
@@ -67,11 +61,10 @@ class OSMInterfaceOBJ:
         location = location.lower()
         self.current_location = location
         
-        self.NODE_DICTS  [ location ] = pickle.load(open(PATH + "maps\\{}.node_info".format(location), "rb"))
-        self.STREET_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.street_info".format(location), "rb"))
-        self.INTSEC_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.intsec_info".format(location), "rb"))
-        self.POLYGONS[ location ] = pickle.load(open(PATH + "maps\\{}.polygons".format(location), "rb"))
-        self.WAY_INFO[ location ] = pickle.load(open(PATH + "maps\\{}.additional".format(location), "rb"))
+        self.NODE_DICTS  [ location ] = pickle.load(open(PATH + "maps\\{}.node_dict".format(location), "rb"))
+        self.STREET_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.polygon_nodes".format(location), "rb"))
+        self.INTSEC_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.intsec_dict".format(location), "rb"))
+        self.WAY_INFO[ location ] = pickle.load(open(PATH + "maps\\{}.polygon_tags".format(location), "rb"))
         
         for node_id, NodeOBJ in self.NODE_DICTS[location].items():
             NodeOBJ.update_screen_position( self.latlon_to_xy(NodeOBJ.lon, NodeOBJ.lat, origin) )
@@ -127,9 +120,6 @@ class OSMInterfaceOBJ:
         
     def get_intersections(self):
         return self.INTSEC_DICTS[self.current_location]
-
-    def get_polygons(self):
-        return self.POLYGONS[self.current_location]
         
     def get_node_from_id(self, node_id):
         return self.NODE_DICTS[self.current_location][node_id]
