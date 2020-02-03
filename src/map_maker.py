@@ -1,8 +1,7 @@
 from nodes import *
 
+import algorithms.master
 import algorithms.astar
-import algorithms.ruh
-import algorithms.bayesian_ruh
 import algorithms.giraffe
 
 import location_selection
@@ -39,10 +38,10 @@ def query(vehicle_features, goal_features, sightings, view_time, start_pos, loca
     print("Updating with all sightings...")
     for sighting in sightings:
         s = OSMInterface.get_nearestll( sighting[1] )
-        goal_vector = algorithms.bayesian_ruh.bruh_update(OSMInterface, start_node, s, goal_vector, time=sighting[0], features=vehicle_features)
+        goal_vector = algorithms.master.sighting_update(OSMInterface, start_node, s, goal_vector, time=sighting[0], features=vehicle_features)
     
     print("Running giraffe...")
-    node_values = algorithms.bayesian_ruh.bruh(OSMInterface, start_node, goal_vector, time=view_time, time_s=0.1, dist_s=20, features=vehicle_features)
+    node_values = algorithms.master.get_all_layers(OSMInterface, start_node, goal_vector, time=view_time, time_s=0.1, dist_s=20, features=vehicle_features)
     
     print("Running astar...")
     paths = {}

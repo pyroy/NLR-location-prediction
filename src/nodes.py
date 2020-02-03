@@ -52,6 +52,8 @@ class OSMInterfaceOBJ:
         self.WAY_INFO = pickle.load(open(PATH + "maps\\{}.polygon_tags".format(location), "rb"))
 
         # This calculates the x, y position of the nodes relative to an origin
+        # Inputting the correct origin is only needed if you want to plot nodes on a
+        # 2D canvas. Else, (0, 0) can be used.
         for node_id, NodeOBJ in self.NODE_DICTS.items():
             NodeOBJ.update_screen_position( self.latlon_to_xy(NodeOBJ.lon, NodeOBJ.lat, origin) )
         

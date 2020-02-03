@@ -1,6 +1,5 @@
 from nodes import *
 import copy
-import algorithms.ruh
 import algorithms.giraffe
 
 # This is the Bayesian Rotationally Unidependent Heuristic Algorithm, aka the B.R.U.H. Algorithm.
@@ -26,8 +25,8 @@ import algorithms.giraffe
 # P(G1 | S) = 0.4*0.33 / (0.4*0.33 + 0.1*0.66) = 66%
 # So now we know (Goal1, 66%)
 
-#Bayesian RUH algorithm.
-def bruh_update(OSMInterface, start, sighting, goal_vector, time=0, time_s=0.1, dist_s=20, features={}):
+#Bayesian Giraffe algorithm.
+def sighting_update(OSMInterface, start, sighting, goal_vector, time=0, time_s=0.1, dist_s=20, features={}):
     new_vec = copy.deepcopy(goal_vector)
     
     # Get all the likelihoods to determine evidence
@@ -47,7 +46,7 @@ def bruh_update(OSMInterface, start, sighting, goal_vector, time=0, time_s=0.1, 
         
     return new_vec
     
-def bruh(OSMInterface, start, goal_vector, max_speed=20, features={}, time=0, time_s=0.1, dist_s=20):
+def get_all_layers(OSMInterface, start, goal_vector, max_speed=20, features={}, time=0, time_s=0.1, dist_s=20):
     v_dict = {}
     v_final = {}
     for goal in goal_vector.keys():
