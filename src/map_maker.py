@@ -26,11 +26,9 @@ def query(vehicle_features, goal_features, sightings, view_time, start_pos, loca
 
     print("Selecting possible locations...")
     goals = location_selection.query(OSMInterface, goal_features)
-    prior = 1/len(goals) # uniforme prior pls update
+    prior = 1/len(goals)
 
     goal_vector = {OSMInterface.get_int_from_node(g).ref: prior for g in goals}
-    #p = OSMInterface.get_nearestll( (50.099239, 7.119022) )
-    #goal_vector = {OSMInterface.get_int_from_node(p.ref).ref: 1}
     
     print("Retrieving starting node...")
     start_node = OSMInterface.get_nearestll( start_pos )
