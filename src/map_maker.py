@@ -13,15 +13,13 @@ import numpy as np
 
 import folium, webbrowser
 
-OSMInterface = OSMInterfaceOBJ()
-
 def rgb_to_hex(rgb):
     return '%02x%02x%02x' % rgb
 
 def query(vehicle_features, goal_features, sightings, view_time, start_pos, location):
 
     print("Loading {}...".format(location))
-    OSMInterface.load_location( location )
+    OSMInterface = OSMInterfaceOBJ(location)
     mapm = folium.Map(location=OSMInterface.l_min, zoom_start=14)
 
     path = os.path.dirname(os.path.abspath(__file__)) + "\\"
@@ -49,6 +47,7 @@ def query(vehicle_features, goal_features, sightings, view_time, start_pos, loca
     print("Running astar...")
     paths = {}
     for goal in goal_vector.keys():
+        # this function returns [] when the goal cannot be reached
         p = algorithms.astar.astar( OSMInterface, start_node, OSMInterface.get_node_from_id( goal ), features=vehicle_features )
         if p != [] and p is not None:
             paths[ goal ] = p

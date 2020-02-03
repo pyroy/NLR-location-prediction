@@ -1,23 +1,33 @@
 import pickle, os, math
 
+# PATH contains the path to root of the project assuming this file is
+# located inside the /src/ folder
 PATH = os.path.dirname(os.path.abspath(__file__)) + "\\"
 PATH = PATH[:-4]
 
 class Node:
     def __init__(self, ref, lat, lon, data):
+        # These 4 values are set by the parser
         self.ref = ref
         self.lat = lat
         self.lon = lon
         self.data = data
+
+        #These are calculated and adjusted when loading in the map
         self.x = None
         self.y = None
         self.attributes = list(data.keys())
+
+        #These are used by the algorithms
         self.streets = []
         self.parent = None
         self.f = 0
         self.g = 0
         self.h = 0
-        
+
+    def get_lat_pos(self):
+        return (float(self.lat), float(self.lon))
+    
     def get_pos(self, offset = (0,0), scale = 1):
         return (scale*self.x + offset[0], scale*self.y + offset[1])
         
@@ -35,95 +45,63 @@ class Node:
         return self.ref == other.ref
 
 class OSMInterfaceOBJ:
-    def __init__(self):
-        self.NODE_DICTS = {}
-        self.STREET_DICTS = {}
-        self.INTSEC_DICTS = {}
-        self.NODE_POS_DICTS = {}
-        self.RENDERS = {}
-        self.UNIQUE_INTERSECTING_NODES = {}
-        self.RENDER_OFFSETS = {}
-        self.POLYGONS = {}
-        self.WAY_INFO = {}
-        self.p_max = ()
+    def __init__(self, location, origin=(0,0)):
+        self.NODE_DICTS = pickle.load(open(PATH + "maps\\{}.node_dict".format(location), "rb"))
+        self.STREET_DICTS = pickle.load(open(PATH + "maps\\{}.polygon_nodes".format(location), "rb"))
+        self.INTSEC_DICTS = pickle.load(open(PATH + "maps\\{}.intsec_dict".format(location), "rb"))
+        self.WAY_INFO = pickle.load(open(PATH + "maps\\{}.polygon_tags".format(location), "rb"))
 
-        self.current_location = "None"
-        
-    def latlon_to_xy(self, lat, long, origin):
-    
-        x_rel_to_origin = -(origin[0]-lat)*400000*math.cos((origin[0]+lat)*math.pi/360)/360
-        y_rel_to_origin = (origin[1]-long)*400000/360
-        
-        return (x_rel_to_origin, y_rel_to_origin)
-        
-    def load_location(self, location, origin=(0,0)):
-    
-        location = location.lower()
-        self.current_location = location
-        
-        self.NODE_DICTS  [ location ] = pickle.load(open(PATH + "maps\\{}.node_dict".format(location), "rb"))
-        self.STREET_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.polygon_nodes".format(location), "rb"))
-        self.INTSEC_DICTS[ location ] = pickle.load(open(PATH + "maps\\{}.intsec_dict".format(location), "rb"))
-        self.WAY_INFO[ location ] = pickle.load(open(PATH + "maps\\{}.polygon_tags".format(location), "rb"))
-        
-        for node_id, NodeOBJ in self.NODE_DICTS[location].items():
+        # This calculates the x, y position of the nodes relative to an origin
+        for node_id, NodeOBJ in self.NODE_DICTS.items():
             NodeOBJ.update_screen_position( self.latlon_to_xy(NodeOBJ.lon, NodeOBJ.lat, origin) )
-
-        x_max = -1000000000
-        x_min = 1000000000
-        y_max = -1000000000
-        y_min = 1000000000
-        
-        lat_max = 0; lat_min = 0; lon_max = 0; lon_min = 0
         
         unique_node_set = []
         for street_id, intersecting_nodes in self.get_intersections().items():
             for node_id in intersecting_nodes:
                 unique_node_set.append( node_id )
-        self.UNIQUE_INTERSECTING_NODES[ location ] = [self.get_node_from_id(node_id) for node_id in list(set(unique_node_set))]
+        self.UNIQUE_INTERSECTING_NODES = [self.get_node_from_id(node_id) for node_id in list(set(unique_node_set))]
+
+        # Code to detect origin coordinates
+        
+        lat_max = -100; lat_min = 100; lon_max = -100; lon_min = 100
 
         for Node in self.get_unique_intersections():
             
-                p = Node.get_pos()
+                p = Node.get_lat_pos()
                 
-                if p[0] > x_max:
-                    x_max = p[0]
-                    lat_max = Node.lat
-                elif p[0] < x_min:
-                    x_min = p[0]
-                    lat_min = Node.lat
-                if p[1] > y_max:
-                    y_max = p[1]
-                    lon_max = Node.lon
-                elif p[1] < y_min:
-                    y_min = p[1]
-                    lon_min = Node.lon
+                if p[0] > lat_max:
+                    lat_max = p[0]
+                elif p[0] < lat_min:
+                    lat_min = p[0]
+                if p[1] > lon_max:
+                    lon_max = p[1]
+                elif p[1] < lon_min:
+                    lon_min = p[1]
 
-        for node_id, NodeOBJ in self.NODE_DICTS[location].items():
-            NodeOBJ.update_screen_position( (NodeOBJ.x - x_min, NodeOBJ.y - y_min) )
-            
-        self.p_max = (x_max - x_min, y_max - y_min)
         self.l_min = (lat_min, lon_min)
         self.l_max = (lat_max, lon_max)
-
-    def get_map_offset(self, scale=1):
-        return (self.RENDER_OFFSETS[ self.current_location ][0]*scale, self.RENDER_OFFSETS[ self.current_location ][1]*scale)
         
-    def select_location(self, location):
-        self.current_location = location.lower()
+    def latlon_to_xy(self, lat, long, origin):
+
+        # in hectometer
+        x_rel_to_origin = -(origin[0]-lat)*400000*math.cos((origin[0]+lat)*math.pi/360)/360
+        y_rel_to_origin = (origin[1]-long)*400000/360
+        
+        return (x_rel_to_origin, y_rel_to_origin)
         
     def get_unique_intersections(self):
-        return self.UNIQUE_INTERSECTING_NODES[self.current_location]
+        return self.UNIQUE_INTERSECTING_NODES
         
     def get_streets(self):
-        return self.STREET_DICTS[self.current_location]
+        return self.STREET_DICTS
         
     def get_intersections(self):
-        return self.INTSEC_DICTS[self.current_location]
+        return self.INTSEC_DICTS
         
     def get_node_from_id(self, node_id):
-        return self.NODE_DICTS[self.current_location][node_id]
+        return self.NODE_DICTS[node_id]
 
+    # returns true if the street between the two given nodes has the given features
     def check_features(self, b, e, features):
         s1 = self.get_streets_of_node(b)
         s2 = self.get_streets_of_node(e)
@@ -135,7 +113,7 @@ class OSMInterfaceOBJ:
                 break
 
         if st is None: return False
-        data = self.WAY_INFO[ self.current_location ][ st ]
+        data = self.WAY_INFO[ st ]
 
         if "wanted_features" in features.keys():
             for f in features["wanted_features"]:
@@ -152,7 +130,7 @@ class OSMInterfaceOBJ:
         return True
         
     def get_nodes(self):
-        return self.NODE_DICTS[self.current_location]
+        return self.NODE_DICTS
 
     def get_incline(self, node1, node2):
         base = self.distance( node1.get_pos(), node2.get_pos() )
@@ -164,8 +142,9 @@ class OSMInterfaceOBJ:
         return math.atan(height/base)
     
     def get_streets_of_node(self, node):
+        # TODO move this function to parser
         node_id = node.ref
-        return [street_id for street_id, nodes_in_street in self.INTSEC_DICTS[self.current_location].items() if node_id in nodes_in_street]
+        return [street_id for street_id, nodes_in_street in self.INTSEC_DICTS.items() if node_id in nodes_in_street]
         
     def distance(self, pos1, pos2):
         return math.sqrt( (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2 )
@@ -200,9 +179,11 @@ class OSMInterfaceOBJ:
                     best = Node
 
         if best is None:
-            print( self.get_unique_intersections() )
+            print( "Something has gone wrong with the node coordinates." )
+            
         return best
-        
+
+    # get node closest to a (lat, lon) coordinate, used to detect nodes inputted by the interface
     def get_nearestll(self, pos):
         best = None
         best_distance = 1000000
@@ -214,7 +195,7 @@ class OSMInterfaceOBJ:
                     best = Node
 
         if best is None:
-            print( self.get_unique_intersections() )
+            print( "Something has gone wrong with the node coordinates." )
             
         return best
 
@@ -232,5 +213,5 @@ class OSMInterfaceOBJ:
                         ret_list.append( self.get_node_from_id( self.get_intersections()[street_id][i+1] ) )
         return [i for i in ret_list if i.ref != node.ref]
         
-    def get_k_nearest(self, node, k):
-        node_streets = self.get_streets_of_node( node )
+    #def get_k_nearest(self, node, k):
+    #    node_streets = self.get_streets_of_node( node )
