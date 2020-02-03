@@ -1,3 +1,6 @@
+# Algorithm lifted from unknown site
+# Modified for use with our classes
+
 from nodes import *
 
 def astar(OSMInterface, start_node, end_node, max_speed=1, retv=False, features={}):
@@ -20,6 +23,8 @@ def astar(OSMInterface, start_node, end_node, max_speed=1, retv=False, features=
         open_list.pop(current_index)
         closed_list.append(current_node)
 
+        # The code in this if loop is very wonky
+        # And needs to be looked at, if we want to speed up the algorithm
         if current_node == end_node:
             path = []
             path_v = []
